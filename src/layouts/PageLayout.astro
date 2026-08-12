@@ -1,15 +1,22 @@
 ---
-import BaseLayout from "./BaseLayout.astro";
-import type { SeoData } from "../lib/seo";
+import BaseLayout from './BaseLayout.astro';
+import SiteHeader from '@/components/marketing/SiteHeader.astro';
+import SiteFooter from '@/components/marketing/SiteFooter.astro';
+import type { ResolvedSeo } from '@/lib/seo';
+import type { SchemaGraph } from '@/lib/schema-org';
 
 interface Props {
-  seo: SeoData;
-  schema?: Record<string, unknown> | Record<string, unknown>[];
+  seo: ResolvedSeo;
+  schema?: SchemaGraph | SchemaGraph[];
 }
 
 const { seo, schema } = Astro.props;
 ---
 
 <BaseLayout seo={seo} schema={schema}>
-  <slot />
+  <SiteHeader />
+  <main id="main">
+    <slot />
+  </main>
+  <SiteFooter />
 </BaseLayout>

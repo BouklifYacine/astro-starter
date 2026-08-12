@@ -1,11 +1,12 @@
 ---
-import PageLayout from "../layouts/PageLayout.astro";
-import { buildSeo } from "../lib/seo";
+import PageLayout from '../layouts/PageLayout.astro';
+import { site } from '../config/site.config';
+import { buildSeo } from '../lib/seo';
 
 const seo = buildSeo({
-  title: "Demande reçue",
-  description: "Votre demande a été reçue. Vous recevrez une réponse après lecture.",
-  path: "/merci/",
+  title: 'Merci',
+  description: 'Votre demande a bien été envoyée.',
+  path: '/merci/',
   noindex: true,
 });
 ---
@@ -13,10 +14,16 @@ const seo = buildSeo({
 <PageLayout seo={seo}>
   <section class="container-shell section-space">
     <div class="surface-card" style="padding: 2rem;">
-      <div class="eyebrow">Merci</div>
-      <h1>Votre demande a été reçue.</h1>
-      <p class="lead-copy">Nous reviendrons vers vous après lecture des informations transmises.</p>
-      <a class="button-primary" href="/">Retour à l’accueil</a>
+      <h1>Merci</h1>
+      <p class="lead-copy">
+        Votre demande a bien été envoyée. Nous revenons vers vous rapidement.
+      </p>
+
+      {site.features.booking && site.contact.bookingUrl && (
+        <p><a class="button-primary" href={site.contact.bookingUrl}>Réserver un créneau</a></p>
+      )}
+
+      <p><a class="button-secondary" href="/">Retour à l’accueil</a></p>
     </div>
   </section>
 </PageLayout>

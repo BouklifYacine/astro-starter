@@ -1,35 +1,38 @@
-import type { CaptchaProvider } from "../types";
+import type { CaptchaProvider, CaptchaResult } from '../types';
 
-const TURNSTILE_SITEVERIFY_URL =
-  "https://challenges.cloudflare.com/turnstile/v0/siteverify";
+const SITEVERIFY_URL = 'https://challenges.cloudflare.com/turnstile/v0/siteverify';
 
-export class TurnstileCaptchaProvider implements CaptchaProvider {
-  public constructor(
-    private readonly secret: string,
-    private readonly fetchImpl: typeof fetch = fetch,
-  ) {}
+/**
+ * Cloudflare Turnstile.
+ *
+ * Being a Cloudflare product does not tie the site to Cloudflare hosting: this is
+ * a plain HTTPS API, so it works from Vercel, Netlify or a VPS just as well.
+ */
+export function turnstileCaptcha(secretKey: string): CaptchaProvider {
+  return {
+    async verify(token: string, ip: string | null): Promise<CaptchaResult> {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5_000);
 
-  public async verify(
-    token: string,
-    ip: string | null,
-  ): Promise<"verified" | "rejected" | "unavailable"> {
-    try {
-      const body = new URLSearchParams({
-        secret: this.secret,
-        response: token,
-        ...(ip ? { remoteip: ip } : {}),
-      });
-      const response = await this.fetchImpl(TURNSTILE_SITEVERIFY_URL, {
-        method: "POST",
-        body,
-      });
-      if (!response.ok) {
-        return "unavailable";
+      try {
+        const body = new URLSearchParams({ secret: secretKey, response: token });
+        if (ip) body.set('remoteip', ip);
+
+        const response = await fetch(SITEVERIFY_URL, {
+          method: 'POST',
+          body,
+          signal: controller.signal,
+        });
+
+        if (!response.ok) return 'unavailable';
+
+        const payload = (await response.json()) as { success?: unknown };
+        return payload.success === true ? 'verified' : 'rejected';
+      } catch {
+        return 'unavailable';
+      } finally {
+        clearTimeout(timeout);
       }
-      const payload = (await response.json()) as { success?: boolean };
-      return payload.success ? "verified" : "rejected";
-    } catch {
-      return "unavailable";
-    }
-  }
+    },
+  };
 }

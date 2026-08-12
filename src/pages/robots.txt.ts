@@ -5,10 +5,10 @@ import { getSiteUrl } from "../lib/site-url";
 
 export const GET: APIRoute = () => {
   const lines = ["User-agent: *", "Allow: /", ""];
-  for (const crawler of site.crawlers.allow) {
+  for (const crawler of site.crawlers.allowed) {
     lines.push(`User-agent: ${crawler}`, "Allow: /", "");
   }
-  for (const crawler of site.crawlers.disallow) {
+  for (const crawler of site.crawlers.blocked) {
     lines.push(`User-agent: ${crawler}`, "Disallow: /", "");
   }
   lines.push(`Sitemap: ${new URL("sitemap-index.xml", getSiteUrl()).href}`);

@@ -1,150 +1,55 @@
-import type { KVStore } from "../adapters/types";
+import type { KVStore } from '@/lib/adapters/types';
 
-const SUBMISSION_TTL_SECONDS = 24 * 60 * 60;
-const MEMORY_SUBMISSION_MAX_ENTRIES = 1_000;
-type SubmissionState = "processing" | "accepted";
-interface MemorySubmission { state: SubmissionState; expiresAt: number }
+const TTL_SECONDS = 24 * 60 * 60;
 
-const memorySubmissions = new Map<string, MemorySubmission>();
-const localProcessingSubmissions = new Set<string>();
+export type SubmissionState = 'new' | 'processing' | 'accepted' | 'unavailable';
 
-export type SubmissionLookup =
-  | { kind: "new" }
-  | { kind: "processing" }
-  | { kind: "accepted" }
-  | { kind: "unavailable" };
-
-function submissionKey(submissionId: string): string {
+/**
+ * Prevents one submission from being delivered twice — a double click, a retry
+ * after a slow response, a flaky network.
+ *
+ * The client generates `submissionId` once when the form is mounted and reuses it
+ * across retries; the server refuses to process the same id twice.
+ *
+ * This module lost ~140 lines when the in-memory development fallback became a
+ * KVStore implementation of its own. There is now a single code path, and the
+ * store decides where the state lives.
+ */
+function key(submissionId: string): string {
   return `lead-submission:v1:${submissionId}`;
 }
 
-function pruneMemorySubmissions(now: number): void {
-  for (const [key, submission] of memorySubmissions) {
-    if (submission.expiresAt <= now) memorySubmissions.delete(key);
-  }
-  while (memorySubmissions.size >= MEMORY_SUBMISSION_MAX_ENTRIES) {
-    const oldestKey = memorySubmissions.keys().next().value;
-    if (!oldestKey) break;
-    memorySubmissions.delete(oldestKey);
-  }
+function parse(value: string | null): SubmissionState {
+  return value === 'processing' || value === 'accepted' ? value : 'new';
 }
 
-function parseState(value: string | null): SubmissionState | null {
-  return value === "processing" || value === "accepted" ? value : null;
-}
-
-async function getMemoryState(key: string, now: number): Promise<SubmissionState | null> {
-  pruneMemorySubmissions(now);
-  return memorySubmissions.get(key)?.state ?? null;
-}
-
-function setMemoryState(key: string, state: SubmissionState, now: number): void {
-  pruneMemorySubmissions(now);
-  memorySubmissions.set(key, { state, expiresAt: now + SUBMISSION_TTL_SECONDS * 1000 });
-}
-
-export async function getSubmissionState({
-  submissionId,
-  store,
-  isDevelopment,
-  now = Date.now(),
-}: {
-  submissionId: string;
-  store?: KVStore;
-  isDevelopment: boolean;
-  now?: number;
-}): Promise<SubmissionLookup> {
-  const key = submissionKey(submissionId);
-  if (!store) {
-    if (!isDevelopment) return { kind: "unavailable" };
-    return { kind: (await getMemoryState(key, now)) ?? "new" };
-  }
+/** Marks the submission as in-flight. Returns the state observed BEFORE reserving. */
+export async function reserveSubmission(submissionId: string, store: KVStore): Promise<SubmissionState> {
   try {
-    return { kind: parseState(await store.get(key)) ?? "new" };
+    const existing = parse(await store.get(key(submissionId)));
+    if (existing !== 'new') return existing;
+
+    await store.set(key(submissionId), 'processing', { ttlSeconds: TTL_SECONDS });
+    return 'new';
   } catch {
-    return isDevelopment ? { kind: (await getMemoryState(key, now)) ?? "new" } : { kind: "unavailable" };
+    return 'unavailable';
   }
 }
 
-export async function reserveSubmission({
-  submissionId,
-  store,
-  isDevelopment,
-  now = Date.now(),
-}: {
-  submissionId: string;
-  store?: KVStore;
-  isDevelopment: boolean;
-  now?: number;
-}): Promise<SubmissionLookup> {
-  const key = submissionKey(submissionId);
-  if (localProcessingSubmissions.has(key)) return { kind: "processing" };
-  const existing = await getSubmissionState({ submissionId, store, isDevelopment, now });
-  if (existing.kind !== "new") return existing;
-  localProcessingSubmissions.add(key);
-  if (!store) {
-    if (!isDevelopment) {
-      localProcessingSubmissions.delete(key);
-      return { kind: "unavailable" };
-    }
-    setMemoryState(key, "processing", now);
-    return { kind: "new" };
-  }
+/** Marks the submission as delivered. */
+export async function acceptSubmission(submissionId: string, store: KVStore): Promise<void> {
   try {
-    await store.set(key, "processing", SUBMISSION_TTL_SECONDS);
-    return { kind: "new" };
+    await store.set(key(submissionId), 'accepted', { ttlSeconds: TTL_SECONDS });
   } catch {
-    localProcessingSubmissions.delete(key);
-    if (isDevelopment) {
-      setMemoryState(key, "processing", now);
-      return { kind: "new" };
-    }
-    return { kind: "unavailable" };
+    // The lead was delivered; failing to record that must not fail the request.
   }
 }
 
-export async function acceptSubmission({
-  submissionId,
-  store,
-  isDevelopment,
-  now = Date.now(),
-}: {
-  submissionId: string;
-  store?: KVStore;
-  isDevelopment: boolean;
-  now?: number;
-}): Promise<boolean> {
-  const key = submissionKey(submissionId);
+/** Releases the reservation so the visitor can legitimately retry after a failure. */
+export async function releaseSubmission(submissionId: string, store: KVStore): Promise<void> {
   try {
-    if (store) await store.set(key, "accepted", SUBMISSION_TTL_SECONDS);
-    else if (isDevelopment) setMemoryState(key, "accepted", now);
-    else return false;
-    return true;
+    await store.delete(key(submissionId));
   } catch {
-    if (isDevelopment) {
-      setMemoryState(key, "accepted", now);
-      return true;
-    }
-    return false;
-  } finally {
-    localProcessingSubmissions.delete(key);
-  }
-}
-
-export async function releaseSubmission({
-  submissionId,
-  store,
-  isDevelopment,
-}: {
-  submissionId: string;
-  store?: KVStore;
-  isDevelopment: boolean;
-}): Promise<void> {
-  const key = submissionKey(submissionId);
-  try {
-    if (store) await store.delete(key);
-    else if (isDevelopment) memorySubmissions.delete(key);
-  } finally {
-    localProcessingSubmissions.delete(key);
+    // Nothing to do — the TTL will clear it.
   }
 }

@@ -1,5 +1,5 @@
 import { site } from "../../config/site.config";
-import type { LeadRequest } from "../leads/types";
+import type { Lead } from "../adapters/types";
 import type { MailMessage } from "../adapters/types";
 
 function escapeHtml(value: string): string {
@@ -12,26 +12,28 @@ function escapeHtml(value: string): string {
   })[character] ?? character);
 }
 
-export function leadAutoReply(lead: LeadRequest): MailMessage {
-  const name = escapeHtml(lead.name);
+export function leadAutoReply(lead: Lead): MailMessage {
+  const name = lead.fields.name ?? "";
+  const email = lead.fields.email ?? site.contact.email;
   return {
-    to: lead.email ?? site.contact.email,
+    to: email,
     subject: `Votre demande — ${site.name}`,
-    replyTo: site.contact.email,
-    html: `<p>Bonjour ${name},</p><p>Votre demande a bien été reçue. Nous reviendrons vers vous après lecture.</p><p>${escapeHtml(site.name)}</p>`,
-    text: `Bonjour ${lead.name},\n\nVotre demande a bien été reçue. Nous reviendrons vers vous après lecture.\n\n${site.name}`,
+    replyTo: site.contact.email || undefined,
+    html: `<p>Bonjour ${escapeHtml(name)},</p><p>Votre demande a bien été reçue. Nous reviendrons vers vous après lecture.</p><p>${escapeHtml(site.name)}</p>`,
+    text: `Bonjour ${name},\n\nVotre demande a bien été reçue. Nous reviendrons vers vous après lecture.\n\n${site.name}`,
   };
 }
 
-export function leadNotification(lead: LeadRequest): MailMessage {
+export function leadNotification(lead: Lead): MailMessage {
   const lines = Object.entries(lead.fields)
-    .map(([key, value]) => `<li><strong>${escapeHtml(key)}</strong> : ${escapeHtml(String(value ?? ""))}</li>`)
+    .map(([key, value]) => `<li><strong>${escapeHtml(key)}</strong> : ${escapeHtml(value)}</li>`)
     .join("");
+  const name = lead.fields.name ?? "Demande";
   return {
     to: site.contact.email,
-    subject: `Nouvelle demande — ${lead.company}`,
-    replyTo: lead.email,
-    html: `<h1>Nouvelle demande</h1><p><strong>${escapeHtml(lead.name)}</strong> (${escapeHtml(lead.company)})</p><ul>${lines}</ul>`,
-    text: `Nouvelle demande\n${lead.name} (${lead.company})\n${Object.entries(lead.fields).map(([key, value]) => `${key}: ${String(value ?? "")}`).join("\n")}`,
+    subject: `Nouvelle demande — ${lead.fields.company ?? name}`,
+    replyTo: lead.fields.email,
+    html: `<h1>Nouvelle demande</h1><p><strong>${escapeHtml(name)}</strong></p><ul>${lines}</ul>`,
+    text: `Nouvelle demande\n${name}\n${Object.entries(lead.fields).map(([key, value]) => `${key}: ${value}`).join("\n")}`,
   };
 }

@@ -1,34 +1,53 @@
-import type { MailMessage, MailProvider, ProviderDelivery } from "../types";
+import type { MailMessage, MailProvider, MailResult } from '../types';
 
-const RESEND_ENDPOINT = "https://api.resend.com/emails";
+/**
+ * Resend over its REST API. No SDK: one endpoint does not justify a dependency,
+ * and it keeps the Worker bundle small.
+ *
+ * Deliverability is not this adapter's job. SPF, DKIM and DMARC must be set on the
+ * client's domain or the mail lands in spam regardless of the code — see the
+ * project checklist.
+ */
+export function resendMail(apiKey: string, from: string): MailProvider {
+  return {
+    async send(message: MailMessage): Promise<MailResult> {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 8_000);
 
-export class ResendMailProvider implements MailProvider {
-  public constructor(
-    private readonly apiKey: string,
-    private readonly from: string,
-    private readonly fetchImpl: typeof fetch = fetch,
-  ) {}
+      try {
+        const response = await fetch('https://api.resend.com/emails', {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            from,
+            to: [message.to],
+            subject: message.subject,
+            html: message.html,
+            text: message.text,
+            ...(message.replyTo ? { reply_to: [message.replyTo] } : {}),
+          }),
+          signal: controller.signal,
+        });
 
-  public async send(message: MailMessage): Promise<ProviderDelivery> {
-    try {
-      const response = await this.fetchImpl(RESEND_ENDPOINT, {
-        method: "POST",
-        headers: {
-          Authorization: `Bearer ${this.apiKey}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          from: this.from,
-          to: message.to,
-          subject: message.subject,
-          html: message.html,
-          text: message.text,
-          ...(message.replyTo ? { reply_to: message.replyTo } : {}),
-        }),
-      });
-      return response.ok ? "accepted" : "rejected";
-    } catch {
-      return "unavailable";
-    }
-  }
+        if (response.ok) return { ok: true };
+
+        return {
+          ok: false,
+          reason: response.status >= 500 ? 'unavailable' : 'rejected',
+          detail: `HTTP ${response.status}`,
+        };
+      } catch (error) {
+        return {
+          ok: false,
+          reason: 'unavailable',
+          detail: controller.signal.aborted ? 'timeout' : (error as Error).message,
+        };
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+  };
 }

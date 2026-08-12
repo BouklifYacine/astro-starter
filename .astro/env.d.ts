@@ -6,12 +6,12 @@ declare module 'astro:env/client' {
 }declare module 'astro:env/server' {
 	export const SITE_URL: string | undefined;	
 	export const TURNSTILE_SECRET_KEY: string | undefined;	
-	export const N8N_LEADS_WEBHOOK_URL: string | undefined;	
-	export const N8N_WEBHOOK_SECRET: string | undefined;	
+	export const LEAD_WEBHOOK_URL: string | undefined;	
+	export const LEAD_WEBHOOK_SECRET: string | undefined;	
+	export const CAL_BOOKING_URL: string | undefined;	
 	export const RESEND_API_KEY: string | undefined;	
-	export const MAIL_FROM: string | undefined;	
-	export const MAIL_REPLY_TO: string | undefined;	
 	export const UPSTASH_REDIS_REST_URL: string | undefined;	
 	export const UPSTASH_REDIS_REST_TOKEN: string | undefined;	
-	export const CAL_BOOKING_URL: string | undefined;	
+	export const MAIL_FROM: string | undefined;	
+	export const MAIL_NOTIFY_TO: string | undefined;	
 }

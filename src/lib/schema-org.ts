@@ -1,64 +1,96 @@
-import { site } from "../config/site.config";
-import { absoluteUrl, getSiteUrl } from "./site-url";
+import { site } from '@/config/site.config';
+import { absoluteUrl, origin } from '@/lib/seo';
 
-type SchemaNode = Record<string, unknown>;
+/**
+ * Typed schema.org builders.
+ *
+ * Only real schema.org properties — an invented field is ignored at best. Empty
+ * values are dropped rather than emitted, so a partially filled site.config never
+ * publishes `"telephone": ""`.
+ *
+ * Like buildSeo, these take paths and resolve the origin themselves.
+ */
+export type SchemaGraph = Record<string, unknown>;
 
-export function organizationSchema(): SchemaNode {
+function compact(input: SchemaGraph): SchemaGraph {
+  return Object.fromEntries(
+    Object.entries(input).filter(([, value]) => {
+      if (value === undefined || value === null || value === '') return false;
+      if (Array.isArray(value) && value.length === 0) return false;
+      if (typeof value === 'object' && Object.keys(value as object).length <= 1) return false;
+      return true;
+    }),
+  );
+}
+
+export function organizationSchema(): SchemaGraph {
+  const address = compact({
+    '@type': 'PostalAddress',
+    streetAddress: site.contact.address.street,
+    postalCode: site.contact.address.postalCode,
+    addressLocality: site.contact.address.city,
+    addressCountry: site.contact.address.country,
+  });
+
   return {
-    "@type": "Organization",
-    "@id": `${getSiteUrl().href}#organization`,
-    name: site.legalName,
-    url: getSiteUrl().href,
-    email: site.legal.email,
-    ...(site.contact.phone ? { telephone: site.contact.phone } : {}),
-    ...(site.legal.address ? { address: site.legal.address } : {}),
+    '@context': 'https://schema.org',
+    '@type': 'Organization',
+    ...compact({
+      name: site.legalName || site.name,
+      url: origin,
+      logo: site.brand.logo ? absoluteUrl(site.brand.logo) : '',
+      email: site.contact.email,
+      telephone: site.contact.phone,
+      address,
+      sameAs: site.sameAs,
+    }),
   };
 }
 
-export function localBusinessSchema(): SchemaNode {
+export function websiteSchema(): SchemaGraph {
   return {
-    ...organizationSchema(),
-    "@type": "LocalBusiness",
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
     name: site.name,
-  };
-}
-
-export function websiteSchema(): SchemaNode {
-  return {
-    "@type": "WebSite",
-    "@id": `${getSiteUrl().href}#website`,
-    name: site.name,
-    url: getSiteUrl().href,
+    url: origin,
     inLanguage: site.lang,
   };
 }
 
 export function articleSchema(input: {
   title: string;
-  description: string;
+  description?: string;
   path: string;
+  image?: string;
   publishedAt: Date;
   updatedAt?: Date;
-  image?: string;
-}): SchemaNode {
+  authorName?: string;
+}): SchemaGraph {
+  const publisher = site.legalName || site.name;
+
   return {
-    "@type": "Article",
+    '@context': 'https://schema.org',
+    '@type': 'Article',
     headline: input.title,
-    description: input.description,
-    mainEntityOfPage: absoluteUrl(input.path),
+    url: absoluteUrl(input.path),
     datePublished: input.publishedAt.toISOString(),
-    ...(input.updatedAt ? { dateModified: input.updatedAt.toISOString() } : {}),
-    ...(input.image ? { image: absoluteUrl(input.image) } : {}),
-    author: { "@type": "Organization", name: site.name },
-    publisher: organizationSchema(),
+    dateModified: (input.updatedAt ?? input.publishedAt).toISOString(),
+    inLanguage: site.lang,
+    author: { '@type': 'Organization', name: input.authorName || publisher },
+    publisher: { '@type': 'Organization', name: publisher },
+    ...compact({
+      description: input.description ?? '',
+      image: input.image ? absoluteUrl(input.image) : '',
+    }),
   };
 }
 
-export function breadcrumbSchema(items: Array<{ name: string; path: string }>): SchemaNode {
+export function breadcrumbSchema(items: { name: string; path: string }[]): SchemaGraph {
   return {
-    "@type": "BreadcrumbList",
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
     itemListElement: items.map((item, index) => ({
-      "@type": "ListItem",
+      '@type': 'ListItem',
       position: index + 1,
       name: item.name,
       item: absoluteUrl(item.path),
@@ -66,13 +98,14 @@ export function breadcrumbSchema(items: Array<{ name: string; path: string }>): 
   };
 }
 
-export function faqSchema(items: Array<{ question: string; answer: string }>): SchemaNode {
+export function faqSchema(items: { question: string; answer: string }[]): SchemaGraph {
   return {
-    "@type": "FAQPage",
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
     mainEntity: items.map((item) => ({
-      "@type": "Question",
+      '@type': 'Question',
       name: item.question,
-      acceptedAnswer: { "@type": "Answer", text: item.answer },
+      acceptedAnswer: { '@type': 'Answer', text: item.answer },
     })),
   };
 }

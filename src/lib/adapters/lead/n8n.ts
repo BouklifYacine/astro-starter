@@ -1,93 +1,67 @@
-import type { LeadRequest } from "../../leads/types";
-import type { LeadDestination, ProviderDelivery } from "../types";
+import type { DeliveryResult, Lead, LeadDestination } from '../types';
 
-export interface N8nLeadPayload {
-  submissionId: string;
-  receivedAt: string;
-  name: string;
-  company: string;
-  email?: string;
-  phone?: string;
-  service: string;
-  need: string;
-  consent: true;
-  newsletter?: boolean;
-  fields: Record<string, unknown>;
-  utm?: LeadRequest["utm"];
+const DELIVERY_TIMEOUT_MS = 8_000;
+
+function toHex(buffer: ArrayBuffer): string {
+  return Array.from(new Uint8Array(buffer), (byte) => byte.toString(16).padStart(2, '0')).join('');
 }
 
-function bytesToHex(bytes: ArrayBuffer): string {
-  return Array.from(new Uint8Array(bytes), (byte) =>
-    byte.toString(16).padStart(2, "0"),
-  ).join("");
-}
-
-export async function signWebhookPayload(
-  payload: string,
-  timestamp: string,
-  secret: string,
-): Promise<string> {
+/**
+ * HMAC-SHA256 over `${timestamp}.${payload}`.
+ *
+ * The timestamp is inside the signed material so a captured request cannot be
+ * replayed later with a fresh timestamp header. The receiving end must verify the
+ * signature AND reject timestamps outside a small window.
+ */
+export async function signPayload(payload: string, timestamp: string, secret: string): Promise<string> {
   const key = await crypto.subtle.importKey(
-    "raw",
+    'raw',
     new TextEncoder().encode(secret),
-    { name: "HMAC", hash: "SHA-256" },
+    { name: 'HMAC', hash: 'SHA-256' },
     false,
-    ["sign"],
+    ['sign'],
   );
-  const signature = await crypto.subtle.sign(
-    "HMAC",
-    key,
-    new TextEncoder().encode(`${timestamp}.${payload}`),
-  );
-  return bytesToHex(signature);
+
+  return toHex(await crypto.subtle.sign('HMAC', key, new TextEncoder().encode(`${timestamp}.${payload}`)));
 }
 
-export class N8nLeadDestination implements LeadDestination {
-  public constructor(
-    private readonly webhookUrl: string,
-    private readonly webhookSecret: string,
-    private readonly fetchImpl: typeof fetch = fetch,
-  ) {}
+/**
+ * Posts the lead to an n8n webhook, signed.
+ *
+ * Header names are neutral (X-Lead-*): a brand name in a protocol header is a
+ * client value leaking out of site.config, which invariant I1 forbids.
+ */
+export function n8nDestination(webhookUrl: string, secret: string): LeadDestination {
+  return {
+    async deliver(lead: Lead): Promise<DeliveryResult> {
+      const payload = JSON.stringify(lead);
+      const timestamp = Math.floor(Date.now() / 1000).toString();
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), DELIVERY_TIMEOUT_MS);
 
-  public async deliver(lead: LeadRequest): Promise<ProviderDelivery> {
-    const payload: N8nLeadPayload = {
-      submissionId: lead.submissionId,
-      receivedAt: new Date().toISOString(),
-      name: lead.name,
-      company: lead.company,
-      email: lead.email,
-      phone: lead.phone,
-      service: lead.service,
-      need: lead.need,
-      consent: true,
-      newsletter: lead.newsletter,
-      fields: lead.fields,
-      utm: lead.utm,
-    };
-    const body = JSON.stringify(payload);
-    const timestamp = Math.floor(Date.now() / 1000).toString();
-    const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 8_000);
+      try {
+        const response = await fetch(webhookUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'X-Lead-Signature': await signPayload(payload, timestamp, secret),
+            'X-Lead-Timestamp': timestamp,
+            'X-Lead-Submission-Id': lead.submissionId,
+          },
+          body: payload,
+          // A redirect would silently send a signed payload somewhere else.
+          redirect: 'error',
+          signal: controller.signal,
+        });
 
-    try {
-      const signature = await signWebhookPayload(body, timestamp, this.webhookSecret);
-      const response = await this.fetchImpl(this.webhookUrl, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          "X-Boilerplate-Signature": signature,
-          "X-Boilerplate-Timestamp": timestamp,
-          "X-Boilerplate-Submission-Id": lead.submissionId,
-        },
-        body,
-        redirect: "error",
-        signal: controller.signal,
-      });
-      return response.ok ? "accepted" : "rejected";
-    } catch {
-      return controller.signal.aborted ? "timeout" : "rejected";
-    } finally {
-      clearTimeout(timeout);
-    }
-  }
+        return response.ok ? { ok: true } : { ok: false, reason: 'rejected', detail: `HTTP ${response.status}` };
+      } catch (error) {
+        return controller.signal.aborted
+          ? { ok: false, reason: 'timeout' }
+          : { ok: false, reason: 'unavailable', detail: (error as Error).message };
+      } finally {
+        clearTimeout(timeout);
+      }
+    },
+  };
 }

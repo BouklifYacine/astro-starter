@@ -1,18 +1,31 @@
 ---
-import { site } from "../../config/site.config";
+import { site } from '@/config/site.config';
+
+const year = new Date().getFullYear();
 ---
 
-<footer class="site-footer">
-  <div class="container-shell site-footer-grid">
+<footer class="mt-(--spacing-section) border-t border-(--color-border)">
+  <div class="mx-auto flex max-w-5xl flex-col gap-6 px-4 py-10 text-sm md:flex-row md:justify-between">
     <div>
-      <strong>{site.name}</strong>
-      <p class="muted">{site.legalName}</p>
+      <p class="font-semibold">{site.name}</p>
+      {site.contact.email && (
+        <p class="mt-2"><a href={`mailto:${site.contact.email}`}>{site.contact.email}</a></p>
+      )}
+      {site.contact.phone && (
+        <p><a href={`tel:${site.contact.phone.replace(/\s/g, '')}`}>{site.contact.phone}</a></p>
+      )}
     </div>
-    <nav aria-label="Informations légales">
-      <a href="/mentions-legales/">Mentions légales</a>
-      <a href="/politique-confidentialite/">Confidentialité</a>
-      <a href="/gestion-cookies/">Cookies</a>
-      <a href="/contact/">Contact</a>
+
+    <nav aria-label="Liens légaux">
+      <ul class="flex flex-col gap-2">
+        {site.nav.footer.map((item) => (
+          <li><a href={item.href} class="hover:underline">{item.label}</a></li>
+        ))}
+      </ul>
     </nav>
   </div>
+
+  <p class="mx-auto max-w-5xl px-4 pb-8 text-xs text-(--color-muted)">
+    © {year} {site.legalName || site.name}
+  </p>
 </footer>

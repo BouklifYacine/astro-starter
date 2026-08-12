@@ -1,17 +1,18 @@
 ---
-import BaseLayout from "./BaseLayout.astro";
-import type { SeoData } from "../lib/seo";
+import PageLayout from './PageLayout.astro';
+import type { ResolvedSeo } from '@/lib/seo';
+import type { SchemaGraph } from '@/lib/schema-org';
 
 interface Props {
-  seo: SeoData;
-  schema?: Record<string, unknown> | Record<string, unknown>[];
+  seo: ResolvedSeo;
+  schema?: SchemaGraph | SchemaGraph[];
 }
 
 const { seo, schema } = Astro.props;
 ---
 
-<BaseLayout seo={seo} schema={schema}>
+<PageLayout seo={seo} schema={schema}>
   <article class="container-shell section-space">
     <slot />
   </article>
-</BaseLayout>
+</PageLayout>

@@ -1,103 +1,137 @@
-import { z } from "zod";
+import { z } from 'zod';
 
-const providerSchema = z.object({
-  kv: z.enum(["cloudflare", "upstash"]),
-  mail: z.literal("resend"),
-  lead: z.literal("n8n"),
-  captcha: z.literal("turnstile"),
-  cms: z.literal("files"),
-});
+/**
+ * Validation for site.config.ts. A missing or malformed field fails the build with
+ * a readable message instead of rendering an empty tag somewhere in production.
+ *
+ * Provider unions list only the adapters that actually exist (§1 of the plan).
+ * Adding an adapter means adding its implementation AND its union member, in the
+ * same commit — never a stub that throws at runtime.
+ */
 
 const formFieldSchema = z.object({
-  name: z.string().regex(/^[a-z][a-zA-Z0-9_]*$/),
+  name: z.string().regex(/^[a-z][a-zA-Z0-9]*$/, 'field name must be camelCase'),
+  type: z.enum(['text', 'email', 'tel', 'textarea', 'select', 'checkbox']),
   label: z.string().min(1),
-  type: z.enum(["text", "email", "tel", "textarea", "select", "checkbox"]),
   required: z.boolean().default(false),
+  min: z.number().int().positive().optional(),
+  max: z.number().int().positive().optional(),
+  options: z.array(z.string()).optional(),
+  autocomplete: z.string().optional(),
   placeholder: z.string().optional(),
-  options: z
-    .array(z.object({ value: z.string().min(1), label: z.string().min(1) }))
-    .optional(),
 });
 
-export const siteSchema = z
-  .object({
-    name: z.string().min(1),
-    legalName: z.string().min(1),
-    domain: z.string().min(1),
-    lang: z.string().regex(/^[a-z]{2}$/),
-    locale: z.string().min(2),
-    brand: z.object({
-      themeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
-      favicon: z.string().startsWith("/"),
-      ogImage: z.string().startsWith("/"),
-    }),
-    contact: z.object({
-      email: z.email(),
-      phone: z.string(),
-      address: z.string(),
-    }),
-    legal: z.object({
-      status: z.string(),
-      siren: z.string(),
-      address: z.string(),
-      email: z.email(),
-    }),
-    navigation: z.array(
-      z.object({ label: z.string().min(1), href: z.string().startsWith("/") }),
-    ),
-    providers: providerSchema,
-    seo: z.object({
-      titleTemplate: z.string().min(1),
-      defaultTitle: z.string().min(1),
-      defaultDescription: z.string().min(1),
-      ogImage: z.string().startsWith("/"),
-      verification: z.object({ google: z.string(), bing: z.string() }),
-      noindexPaths: z.array(z.string().startsWith("/")),
-      indexNowKey: z.string(),
-    }),
-    form: z
-      .object({
-        enabled: z.boolean(),
-        legalBasis: z.enum(["precontractual", "consent", "legal_obligation", "legitimate_interest"]),
-        privacyNotice: z.string().min(1),
-        requireAcknowledgement: z.boolean(),
-        fields: z.array(formFieldSchema).min(1),
-      })
-      .superRefine((form, context) => {
-        const names = new Set(form.fields.map((field) => field.name));
-        for (const requiredName of ["name", "company", "need"]) {
-          if (!names.has(requiredName)) {
-            context.addIssue({
-              code: "custom",
-              path: ["fields"],
-              message: `Le champ obligatoire ${requiredName} manque dans la configuration du formulaire.`,
-            });
-          }
-        }
-        if (!names.has("email") && !names.has("phone")) {
-          context.addIssue({
-            code: "custom",
-            path: ["fields"],
-            message: "Le formulaire doit proposer un e-mail ou un téléphone.",
-          });
-        }
-      }),
-    crawlers: z.object({
-      allow: z.array(z.string()),
-      disallow: z.array(z.string()),
-      contentSignal: z.string(),
-    }),
-    features: z.object({
-      analytics: z.boolean(),
-      darkMode: z.boolean(),
-      booking: z.boolean(),
-    }),
-  })
-  .strict();
-
-export type SiteConfig = z.infer<typeof siteSchema>;
 export type FormField = z.infer<typeof formFieldSchema>;
 
-export function validateSiteConfig(value: unknown): SiteConfig {
-  return siteSchema.parse(value);
+export const siteSchema = z.object({
+  name: z.string().min(1),
+  legalName: z.string(),
+  domain: z.string().regex(/^[a-z0-9.-]+\.[a-z]{2,}$/, 'domain without protocol, e.g. example.com'),
+  lang: z.string().min(2),
+  locale: z.string().min(2),
+
+  providers: z.object({
+    kv: z.enum(['cloudflare', 'upstash', 'memory']),
+    mail: z.enum(['resend', 'none']),
+    lead: z.enum(['n8n', 'mail']),
+    captcha: z.enum(['turnstile', 'none']),
+    cms: z.enum(['files']),
+  }),
+
+  seo: z.object({
+    titleTemplate: z.string().includes('%s'),
+    defaultTitle: z.string(),
+    defaultDescription: z.string(),
+    ogImage: z.string().startsWith('/'),
+    verification: z.object({ google: z.string(), bing: z.string() }),
+    noindexPaths: z.array(z.string().startsWith('/')),
+    indexNowKey: z.string(),
+  }),
+
+  crawlers: z.object({
+    allowed: z.array(z.string()),
+    blocked: z.array(z.string()),
+    contentSignal: z.string(),
+  }),
+
+  brand: z.object({
+    themeColor: z.string().regex(/^#[0-9a-fA-F]{6}$/),
+    favicon: z.string().startsWith('/'),
+    logo: z.string().startsWith('/'),
+  }),
+
+  contact: z.object({
+    email: z.string(),
+    phone: z.string(),
+    address: z.object({
+      street: z.string(),
+      postalCode: z.string(),
+      city: z.string(),
+      country: z.string().length(2),
+    }),
+    bookingUrl: z.string(),
+  }),
+
+  sameAs: z.array(z.url()),
+
+  form: z.object({
+    enabled: z.boolean().default(true),
+    fields: z.array(formFieldSchema).min(1),
+    // RGPD: consent is one lawful basis among six. A quote request is normally a
+    // pre-contractual measure taken at the person's request. What is mandatory is
+    // the INFORMATION, not a checkbox. Declaring consent when it is not the real
+    // basis creates its own compliance problem (right to withdraw = erasure duty).
+    legalBasis: z.enum(['precontractual', 'consent', 'legitimate_interest']),
+    requireAcknowledgement: z.boolean(),
+    privacyNotice: z.string(),
+    marketingOptIn: z.boolean(),
+    autoReply: z.boolean(),
+    minDelayMs: z.number().int().nonnegative(),
+    rateLimit: z.object({
+      maxAttempts: z.number().int().positive(),
+      windowMs: z.number().int().positive(),
+    }),
+  }),
+
+  legal: z.object({
+    email: z.string(),
+    address: z.string(),
+    status: z.string(),
+    siren: z.string(),
+    vat: z.string(),
+    capital: z.string(),
+    publisher: z.string(),
+    host: z.object({ name: z.string(), address: z.string(), url: z.string() }),
+  }),
+
+  nav: z.object({
+    main: z.array(z.object({ label: z.string(), href: z.string() })),
+    footer: z.array(z.object({ label: z.string(), href: z.string() })),
+    cta: z.object({ label: z.string(), href: z.string() }),
+  }),
+
+  blog: z.object({ postsPerPage: z.number().int().positive() }),
+
+  // Runtime behaviour only. Removing a module is init.mjs's job (rule 3):
+  // a boolean never takes a route out of the build.
+  features: z.object({
+    analytics: z.boolean(),
+    darkMode: z.boolean(),
+    booking: z.boolean(),
+  }),
+});
+
+export type SiteConfig = z.infer<typeof siteSchema>;
+
+export function defineSite(config: unknown): SiteConfig {
+  const result = siteSchema.safeParse(config);
+
+  if (!result.success) {
+    const issues = result.error.issues
+      .map((issue) => `  • ${issue.path.join('.') || '(root)'}: ${issue.message}`)
+      .join('\n');
+    throw new Error(`Invalid site.config.ts:\n${issues}`);
+  }
+
+  return result.data;
 }

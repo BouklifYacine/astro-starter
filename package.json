@@ -1,25 +1,24 @@
 {
   "name": "astro-boilerplate",
+  "type": "module",
   "version": "1.0.0",
   "private": true,
-  "type": "module",
-  "packageManager": "bun@1.3.14",
   "engines": {
-    "node": ">=22.12.0",
-    "bun": ">=1.3.14"
+    "node": ">=22.12.0"
   },
   "scripts": {
     "dev": "astro dev",
     "build": "astro build",
+    "preview": "astro preview",
     "check": "astro check",
     "test": "vitest run",
-    "preview": "astro preview",
-    "init": "bun scripts/init.mjs",
-    "verify:build": "bun scripts/verify-build.mjs",
-    "perf": "bun scripts/perf.mjs",
-    "setup:cloudflare": "bun scripts/setup-cloudflare.mjs",
-    "setup:github": "bun scripts/setup-github.mjs",
-    "indexnow": "bun scripts/indexnow.mjs"
+    "test:watch": "vitest",
+    "init": "node scripts/init.mjs",
+    "verify": "node scripts/verify-build.mjs",
+    "setup:cloudflare": "node scripts/setup-cloudflare.mjs",
+    "setup:github": "node scripts/setup-github.mjs",
+    "deploy": "astro build && wrangler deploy",
+    "astro": "astro"
   },
   "dependencies": {
     "@astrojs/cloudflare": "^14.2.1",
@@ -28,13 +27,10 @@
     "astro": "^7.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "lucide-react": "^1.28.0",
-    "posthog-js": "^1.409.5",
+    "lucide-react": "^1.31.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
-    "shadcn": "^4.16.1",
     "tailwind-merge": "^3.6.0",
-    "tw-animate-css": "^1.4.0",
     "zod": "^4.4.3"
   },
   "devDependencies": {
@@ -45,10 +41,12 @@
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.4",
     "lighthouse": "^13.4.1",
+    "posthog-js": "^1.416.0",
+    "linkedom": "^0.18.12",
     "tailwindcss": "^4.3.3",
     "typescript": "6.0.3",
     "vite": "8.1.5",
     "vitest": "^4.1.10",
-    "wrangler": "^4.118.0"
+    "wrangler": "^4.122.0"
   }
 }

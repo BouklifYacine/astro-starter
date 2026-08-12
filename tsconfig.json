@@ -1,16 +1,14 @@
 {
   "extends": "astro/tsconfigs/strict",
+  "include": [".astro/types.d.ts", "**/*"],
+  "exclude": ["dist"],
   "compilerOptions": {
-    "allowJs": true,
-    "checkJs": true,
+    "strictNullChecks": true,
     "jsx": "react-jsx",
     "jsxImportSource": "react",
-    "moduleResolution": "bundler",
-    "noEmit": true,
-    "resolveJsonModule": true,
-    "strict": true,
-    "types": ["node", "@cloudflare/workers-types"],
-    "verbatimModuleSyntax": true
-  },
-  "include": [".astro/types.d.ts", "src/**/*", "tests/**/*", "astro.config.mjs"]
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"]
+    }
+  }
 }

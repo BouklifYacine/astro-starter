@@ -4,6 +4,11 @@ import { PUBLIC_TURNSTILE_SITE_KEY } from "astro:env/client";
 import { site } from "../../config/site.config";
 import ContactForm from "../forms/ContactForm";
 import SectionHeading from "./SectionHeading.astro";
+
+const address = [
+  site.contact.address.street,
+  `${site.contact.address.postalCode} ${site.contact.address.city}`.trim(),
+].filter(Boolean).join(", ");
 ---
 
 <section class="container-shell section-space" id="contact" aria-labelledby="contact-title">
@@ -17,7 +22,7 @@ import SectionHeading from "./SectionHeading.astro";
       <h3>Informations utiles</h3>
       <p class="muted">{site.contact.email}</p>
       {site.contact.phone && <p class="muted">{site.contact.phone}</p>}
-      <p class="muted">{site.contact.address}</p>
+      {address && <p class="muted">{address}</p>}
     </div>
     <div class="surface-card" style="padding: 1.5rem;">
       <ContactForm
@@ -25,7 +30,9 @@ import SectionHeading from "./SectionHeading.astro";
         fields={site.form.fields}
         privacyNotice={site.form.privacyNotice}
         requireAcknowledgement={site.form.requireAcknowledgement}
-        turnstileSiteKey={PUBLIC_TURNSTILE_SITE_KEY ?? ""}
+        marketingOptIn={site.form.marketingOptIn}
+        captchaSiteKey={PUBLIC_TURNSTILE_SITE_KEY ?? ""}
+        fallbackEmail={site.contact.email}
       />
     </div>
   </div>
