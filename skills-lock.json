@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "skills": {
+    "astro-expert": {
+      "source": "smithery.ai",
+      "sourceUrl": "https://smithery.ai/skills/oimiragieo/astro-expert",
+      "sourceType": "well-known",
+      "computedHash": "cd73bb072595efb67b20c237bec2c339023505b6c6af77908feae553939901e3",
+      "wellKnownDigest": "sha256:08683e971fbc07a2495ac13d09be82a442dca2fd2fb8719779a1ed3519911faf"
+    }
+  }
+}

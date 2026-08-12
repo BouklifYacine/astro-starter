@@ -1,0 +1,4 @@
+interface:
+  display_name: "Astro Framework Specialist"
+  short_description: "Astro architecture and best practices"
+  default_prompt: "Use $astro-framework-specialist to review this Astro implementation and apply current best practices."
