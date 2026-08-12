@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { site } from '../src/config/site.config';
 import { memoryKv } from '../src/lib/adapters/kv/memory';
+import { leadApiResponseSchema } from '../src/lib/forms/api-schema';
 import { acceptSubmission, reserveSubmission } from '../src/lib/leads/idempotency';
 import { consumeRateLimit } from '../src/lib/leads/rate-limit';
 import { getClientIp, hasMinimumDelay, isAllowedOrigin } from '../src/lib/leads/request';
@@ -65,6 +66,27 @@ describe('lead validation', () => {
     );
     expect(fields).not.toHaveProperty('submissionId');
     expect(fields).not.toHaveProperty('website');
+  });
+});
+
+describe('lead API response validation', () => {
+  it('accepts the success response contract', () => {
+    const result = leadApiResponseSchema.safeParse({
+      ok: true,
+      redirectTo: '/merci/',
+    });
+
+    expect(result.success).toBe(true);
+  });
+
+  it('rejects malformed response data instead of trusting a type assertion', () => {
+    const result = leadApiResponseSchema.safeParse({
+      ok: false,
+      code: 'INVALID_REQUEST',
+      message: 42,
+    });
+
+    expect(result.success).toBe(false);
   });
 });
 

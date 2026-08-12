@@ -24,6 +24,7 @@
     "@astrojs/cloudflare": "^14.2.1",
     "@astrojs/react": "^6.0.2",
     "@astrojs/sitemap": "^3.7.3",
+    "@tanstack/react-form": "^1.33.5",
     "astro": "^7.2.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
