@@ -1,0 +1,32 @@
+---
+import { PUBLIC_TURNSTILE_SITE_KEY } from "astro:env/client";
+
+import { site } from "../../config/site.config";
+import ContactForm from "../forms/ContactForm";
+import SectionHeading from "./SectionHeading.astro";
+---
+
+<section class="container-shell section-space" id="contact" aria-labelledby="contact-title">
+  <SectionHeading
+    eyebrow="Contact"
+    title="Une question ou un projet ?"
+    description="Le formulaire est configurable depuis site.config.ts. Ajoutez les secrets runtime avant de le mettre en production."
+  />
+  <div class="responsive-grid">
+    <div class="surface-card" style="padding: 1.5rem;">
+      <h3>Informations utiles</h3>
+      <p class="muted">{site.contact.email}</p>
+      {site.contact.phone && <p class="muted">{site.contact.phone}</p>}
+      <p class="muted">{site.contact.address}</p>
+    </div>
+    <div class="surface-card" style="padding: 1.5rem;">
+      <ContactForm
+        client:visible
+        fields={site.form.fields}
+        privacyNotice={site.form.privacyNotice}
+        requireAcknowledgement={site.form.requireAcknowledgement}
+        turnstileSiteKey={PUBLIC_TURNSTILE_SITE_KEY ?? ""}
+      />
+    </div>
+  </div>
+</section>

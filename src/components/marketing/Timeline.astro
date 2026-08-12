@@ -1,0 +1,15 @@
+---
+interface Event { title: string; description: string; date?: string }
+interface Props { events: Event[] }
+const { events } = Astro.props;
+---
+
+<div class="timeline-grid">
+  {events.map((event) => (
+    <article class="surface-card timeline-card">
+      {event.date && <div class="eyebrow">{event.date}</div>}
+      <h3>{event.title}</h3>
+      <p class="muted">{event.description}</p>
+    </article>
+  ))}
+</div>

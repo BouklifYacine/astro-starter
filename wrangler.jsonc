@@ -1,0 +1,22 @@
+{
+  "$schema": "./node_modules/wrangler/config-schema.json",
+  "name": "astro-boilerplate",
+  "compatibility_date": "2026-08-12",
+  "compatibility_flags": ["nodejs_compat"],
+  "assets": {
+    "binding": "ASSETS",
+    "directory": "./dist"
+  },
+  "kv_namespaces": [
+    {
+      "binding": "LEAD_RATE_LIMIT",
+      "id": "REMPLACER",
+      "remote": true
+    }
+  ],
+  "routes": [],
+  "observability": {
+    "enabled": true,
+    "head_sampling_rate": 1
+  }
+}

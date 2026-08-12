@@ -1,0 +1,16 @@
+---
+import ContactSection from "../components/marketing/ContactSection.astro";
+import PageLayout from "../layouts/PageLayout.astro";
+import { organizationSchema } from "../lib/schema-org";
+import { buildSeo } from "../lib/seo";
+
+const seo = buildSeo({
+  title: "Contact",
+  description: "Contactez-nous pour présenter votre besoin et recevoir une première réponse.",
+  path: "/contact/",
+});
+---
+
+<PageLayout seo={seo} schema={organizationSchema()}>
+  <ContactSection />
+</PageLayout>

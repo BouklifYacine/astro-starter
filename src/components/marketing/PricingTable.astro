@@ -1,0 +1,18 @@
+---
+interface Plan { name: string; price: string; description: string; features: string[]; highlighted?: boolean }
+interface Props { plans: Plan[] }
+const { plans } = Astro.props;
+---
+
+<div class="responsive-grid">
+  {plans.map((plan) => (
+    <article class:list={["surface-card", "pricing-card"]} style={plan.highlighted ? "border-color: var(--color-brand);" : undefined}>
+      <h3>{plan.name}</h3>
+      <strong style="font-size: 2rem;">{plan.price}</strong>
+      <p class="muted">{plan.description}</p>
+      <ul>
+        {plan.features.map((feature) => <li>{feature}</li>)}
+      </ul>
+    </article>
+  ))}
+</div>

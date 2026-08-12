@@ -1,0 +1,63 @@
+---
+import "../styles/global.css";
+import { PUBLIC_GA4_MEASUREMENT_ID, PUBLIC_POSTHOG_HOST, PUBLIC_POSTHOG_KEY } from "astro:env/client";
+import ConsentAnalytics from "../components/analytics/ConsentAnalytics.astro";
+import SiteFooter from "../components/marketing/SiteFooter.astro";
+import SiteHeader from "../components/marketing/SiteHeader.astro";
+import type { SeoData } from "../lib/seo";
+import { absoluteUrl } from "../lib/site-url";
+import { site } from "../config/site.config";
+
+interface Props {
+  seo: SeoData;
+  schema?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const { seo, schema } = Astro.props;
+const socialImage = absoluteUrl(seo.image);
+const analytics = {
+  gaMeasurementId: PUBLIC_GA4_MEASUREMENT_ID ?? "",
+  posthogKey: PUBLIC_POSTHOG_KEY ?? "",
+  posthogHost: PUBLIC_POSTHOG_HOST ?? "",
+};
+---
+
+<!doctype html>
+<html lang={site.lang}>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="generator" content={Astro.generator} />
+    <meta name="theme-color" content={site.brand.themeColor} />
+    <meta name="description" content={seo.description} />
+    <meta name="robots" content={seo.noindex ? "noindex,nofollow" : "index,follow"} />
+    {site.seo.verification.google && <meta name="google-site-verification" content={site.seo.verification.google} />}
+    {site.seo.verification.bing && <meta name="msvalidate.01" content={site.seo.verification.bing} />}
+    <link rel="canonical" href={seo.canonical} />
+    <link rel="icon" href={site.brand.favicon} />
+    <meta property="og:locale" content={site.locale} />
+    <meta property="og:type" content={seo.type} />
+    <meta property="og:site_name" content={site.name} />
+    <meta property="og:title" content={seo.title} />
+    <meta property="og:description" content={seo.description} />
+    <meta property="og:url" content={seo.canonical} />
+    <meta property="og:image" content={socialImage} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content={seo.title} />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={seo.title} />
+    <meta name="twitter:description" content={seo.description} />
+    <meta name="twitter:image" content={socialImage} />
+    <title>{seo.title}</title>
+    {schema && <script is:inline type="application/ld+json" set:html={JSON.stringify(schema)} />}
+    <slot name="head" />
+  </head>
+  <body>
+    <a href="#contenu" class="skip-link">Aller au contenu</a>
+    <SiteHeader />
+    <main id="contenu"><slot /></main>
+    <SiteFooter />
+    <ConsentAnalytics {...analytics} />
+  </body>
+</html>

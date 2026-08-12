@@ -1,0 +1,22 @@
+---
+import PageLayout from "../layouts/PageLayout.astro";
+import { buildSeo } from "../lib/seo";
+
+const seo = buildSeo({
+  title: "Demande reçue",
+  description: "Votre demande a été reçue. Vous recevrez une réponse après lecture.",
+  path: "/merci/",
+  noindex: true,
+});
+---
+
+<PageLayout seo={seo}>
+  <section class="container-shell section-space">
+    <div class="surface-card" style="padding: 2rem;">
+      <div class="eyebrow">Merci</div>
+      <h1>Votre demande a été reçue.</h1>
+      <p class="lead-copy">Nous reviendrons vers vous après lecture des informations transmises.</p>
+      <a class="button-primary" href="/">Retour à l’accueil</a>
+    </div>
+  </section>
+</PageLayout>

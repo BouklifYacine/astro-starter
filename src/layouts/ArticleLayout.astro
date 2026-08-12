@@ -1,0 +1,17 @@
+---
+import BaseLayout from "./BaseLayout.astro";
+import type { SeoData } from "../lib/seo";
+
+interface Props {
+  seo: SeoData;
+  schema?: Record<string, unknown> | Record<string, unknown>[];
+}
+
+const { seo, schema } = Astro.props;
+---
+
+<BaseLayout seo={seo} schema={schema}>
+  <article class="container-shell section-space">
+    <slot />
+  </article>
+</BaseLayout>

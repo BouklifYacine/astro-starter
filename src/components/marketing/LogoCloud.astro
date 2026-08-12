@@ -1,0 +1,8 @@
+---
+interface Props { names: string[] }
+const { names } = Astro.props;
+---
+
+<div class="logo-grid" aria-label="Logos clients ou partenaires">
+  {names.map((name) => <div class="surface-card logo-card" aria-label={name}>{name}</div>)}
+</div>

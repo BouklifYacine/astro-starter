@@ -1,0 +1,53 @@
+---
+import { faqSchema, organizationSchema, websiteSchema } from "../lib/schema-org";
+import { buildSeo } from "../lib/seo";
+import PageLayout from "../layouts/PageLayout.astro";
+import Hero from "../components/marketing/Hero.astro";
+import SectionHeading from "../components/marketing/SectionHeading.astro";
+import NumberedSteps from "../components/marketing/NumberedSteps.astro";
+import Stats from "../components/marketing/Stats.astro";
+import FaqAccordion from "../components/marketing/FaqAccordion.astro";
+import ContactSection from "../components/marketing/ContactSection.astro";
+import ClosingCta from "../components/marketing/ClosingCta.astro";
+import pageContent from "../content/site.json";
+
+const { home } = pageContent;
+const seo = buildSeo({
+  title: home.title,
+  description: home.description,
+  path: "/",
+});
+const schema = [organizationSchema(), websiteSchema(), faqSchema(home.faq)];
+---
+
+<PageLayout seo={seo} schema={schema}>
+  <Hero
+    eyebrow={home.eyebrow}
+    title={home.title}
+    description={home.description}
+    primaryCta={home.primaryCta}
+    secondaryCta={home.secondaryCta}
+  />
+
+  <section class="container-shell section-space" id="services" aria-labelledby="services-title">
+    <SectionHeading eyebrow="Système de pages" title={home.servicesTitle} description={home.servicesDescription} />
+    <Stats items={[
+      { value: "3", label: "sources de vérité", description: "Configuration, contenu et environnement." },
+      { value: "1", label: "route dynamique", description: "Le formulaire API, le reste reste statique." },
+      { value: "0", label: "marque imposée", description: "Les valeurs client sont remplacées par init." },
+    ]} />
+  </section>
+
+  <section class="container-shell section-space" id="apropos" aria-labelledby="faq-title">
+    <SectionHeading eyebrow="Questions fréquentes" title="Comprendre le socle" />
+    <FaqAccordion items={home.faq} />
+  </section>
+
+  <NumberedSteps title={home.stepsTitle} steps={home.steps} />
+  <ContactSection />
+  <ClosingCta
+    title="Une base claire pour votre prochain site."
+    description="Remplacez les contenus de démonstration, configurez les fournisseurs et lancez vos pages client avec les mêmes garde-fous."
+    label={home.primaryCta}
+  />
+</PageLayout>

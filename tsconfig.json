@@ -1,0 +1,16 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "jsx": "react-jsx",
+    "jsxImportSource": "react",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "strict": true,
+    "types": ["node", "@cloudflare/workers-types"],
+    "verbatimModuleSyntax": true
+  },
+  "include": [".astro/types.d.ts", "src/**/*", "tests/**/*", "astro.config.mjs"]
+}

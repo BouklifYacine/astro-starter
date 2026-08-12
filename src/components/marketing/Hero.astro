@@ -1,0 +1,39 @@
+---
+interface Props {
+  eyebrow: string;
+  title: string;
+  description: string;
+  primaryCta: string;
+  primaryHref?: string;
+  secondaryCta?: string;
+  secondaryHref?: string;
+}
+
+const {
+  eyebrow,
+  title,
+  description,
+  primaryCta,
+  primaryHref = "/contact/",
+  secondaryCta,
+  secondaryHref = "#services",
+} = Astro.props;
+---
+
+<section class="container-shell section-space">
+  <div class="hero-grid">
+    <div>
+      <div class="eyebrow">{eyebrow}</div>
+      <h1 class="display-title">{title}</h1>
+      <p class="lead-copy">{description}</p>
+      <div class="button-row">
+        <a class="button-primary" href={primaryHref}>{primaryCta}</a>
+        {secondaryCta && <a class="button-secondary" href={secondaryHref}>{secondaryCta}</a>}
+      </div>
+    </div>
+    <div class="surface-card" style="padding: 1.5rem; min-height: 18rem; display: grid; align-content: end; background: linear-gradient(145deg, var(--color-brand-soft), var(--color-surface));">
+      <span class="eyebrow">Boilerplate</span>
+      <strong style="font-size: clamp(1.6rem, 4vw, 2.5rem); line-height: 1.05; letter-spacing: -0.05em;">Une structure claire, sans contenu client.</strong>
+    </div>
+  </div>
+</section>
