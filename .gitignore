@@ -141,3 +141,15 @@ dist
 vite.config.js.timestamp-*
 vite.config.ts.timestamp-*
 .vite/
+
+# SEO skill runtime and generated artifacts
+.seo-cache/
+output/
+.agents/skills/seo/.venv/
+.agents/skills/seo/ms-playwright/
+.agents/skills/seo/.setup.lock
+.agents/skills/seo/runtime-state.json
+.claude/skills/seo/.venv/
+.claude/skills/seo/ms-playwright/
+.claude/skills/seo/.setup.lock
+.claude/skills/seo/runtime-state.json
