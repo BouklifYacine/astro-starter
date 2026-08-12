@@ -179,7 +179,7 @@ export default function ContactForm({
       })}
 
       {/* Honeypot: off-screen rather than display:none, which some bots detect. */}
-      <div aria-hidden="true" className="absolute -left-[9999px]">
+      <div aria-hidden="true" className="absolute left-[-9999px]">
         <label htmlFor={`${formId}-website`}>Ne pas remplir</label>
         <input id={`${formId}-website`} name="website" type="text" tabIndex={-1} autoComplete="off" />
       </div>
@@ -203,12 +203,12 @@ export default function ContactForm({
       <button
         type="submit"
         disabled={busy}
-        className="rounded-(--radius-base) bg-(--color-brand) px-5 py-3 text-(--color-brand-contrast) disabled:opacity-60"
+        className="rounded-base bg-brand px-5 py-3 text-brand-contrast disabled:opacity-60"
       >
         {busy ? 'Envoi…' : submitLabel}
       </button>
 
-      <p className="text-xs text-(--color-muted)">{privacyNotice}</p>
+      <p className="text-xs text-muted">{privacyNotice}</p>
 
       <p role="status" aria-live="polite" className="text-sm text-red-700">
         {status.kind === 'error' ? status.message : ''}
