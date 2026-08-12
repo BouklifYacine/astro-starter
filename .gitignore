@@ -153,3 +153,13 @@ output/
 .claude/skills/seo/ms-playwright/
 .claude/skills/seo/.setup.lock
 .claude/skills/seo/runtime-state.json
+
+# Astro generated files
+.astro/
+
+# Cloudflare / Wrangler local state
+.wrangler/
+
+# Local Cloudflare secrets
+.dev.vars
+.dev.vars.*
