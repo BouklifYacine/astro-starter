@@ -1,7 +1,5 @@
 ---
 import BaseLayout from './BaseLayout.astro';
-import SiteHeader from '@/components/marketing/SiteHeader.astro';
-import SiteFooter from '@/components/marketing/SiteFooter.astro';
 import type { ResolvedSeo } from '@/lib/seo';
 import type { SchemaGraph } from '@/lib/schema-org';
 
@@ -14,9 +12,7 @@ const { seo, schema } = Astro.props;
 ---
 
 <BaseLayout seo={seo} schema={schema}>
-  <SiteHeader />
   <main id="main">
     <slot />
   </main>
-  <SiteFooter />
 </BaseLayout>

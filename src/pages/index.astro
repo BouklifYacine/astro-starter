@@ -1,7 +1,5 @@
 ---
 import PageLayout from '../layouts/PageLayout.astro';
-import Hero from '../components/marketing/Hero.astro';
-import ContactSection from '../components/marketing/ContactSection.astro';
 import { site } from '../config/site.config';
 import { buildSeo } from '../lib/seo';
 
@@ -12,13 +10,14 @@ const seo = buildSeo({
 ---
 
 <PageLayout seo={seo}>
-  <Hero
-    eyebrow="Placeholder"
-    title={site.seo.defaultTitle || site.name}
-    description={site.seo.defaultDescription}
-    primaryCta={site.nav.cta.label}
-    primaryHref={site.nav.cta.href}
-  />
-
-  <ContactSection />
+  <section class="container-shell section-space">
+    <div class="section-heading">
+      <div class="eyebrow">Bienvenue</div>
+      <h1>{site.seo.defaultTitle || site.name}</h1>
+      <p>{site.seo.defaultDescription}</p>
+      <p>
+        <a class="button-primary" href={site.nav.cta.href}>{site.nav.cta.label}</a>
+      </p>
+    </div>
+  </section>
 </PageLayout>

@@ -28,7 +28,6 @@ nouveau projet démarre en changeant un fichier au lieu de faire un chercher/rem
 ```
 src/config/site.config.ts     ← le fichier n°1. Tout part de là.
 src/pages/*.astro             ← une page = un fichier
-src/components/marketing/     ← tes blocs visuels (c'est toi qui les écris)
 src/content/blog/*.md         ← tes articles
 src/styles/global.css         ← les 6 variables de marque
 ```
@@ -64,11 +63,9 @@ site.config.ts ─┐
                 ├─► buildSeo({ path }) ─► ResolvedSeo ─┐
 lib/schema-org ─┘                                       ├─► <Seo /> ─► <head>
                                                         │
-page.astro ─────► PageLayout seo={seo} schema={schema} ─┘
-                        │
-                        ├─► SiteHeader
-                        ├─► <slot /> ← TON contenu
-                        └─► SiteFooter
+page.astro ─────► PageLayout seo={seo} schema={schema} ─► BaseLayout
+                                                               ├─► <Seo /> ─► <head>
+                                                               └─► <main id="main"> ← TON contenu
 ```
 
 **Le contrat unique à retenir** : une page construit un objet `seo` avec `buildSeo`,

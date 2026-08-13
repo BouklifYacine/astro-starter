@@ -1,7 +1,6 @@
 ---
 import PageLayout from '../layouts/PageLayout.astro';
 import ContactForm from '../components/forms/ContactForm';
-import Breadcrumbs from '../components/marketing/Breadcrumbs.astro';
 import { site } from '../config/site.config';
 import { buildSeo } from '../lib/seo';
 import { breadcrumbSchema } from '../lib/schema-org';
@@ -21,7 +20,6 @@ const schema = breadcrumbSchema([
 
 <PageLayout seo={seo} schema={schema}>
   <section class="container-shell section-space">
-    <Breadcrumbs items={[{ name: 'Accueil', path: '/' }, { name: 'Contact', path: '/contact/' }]} />
     <div class="section-heading">
       <h1>Contact</h1>
       <p>Décrivez votre besoin, nous revenons vers vous rapidement.</p>

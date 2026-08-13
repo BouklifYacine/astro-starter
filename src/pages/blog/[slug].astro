@@ -3,7 +3,6 @@ import { getCollection } from "astro:content";
 import { render } from "astro:content";
 
 import ArticleLayout from "../../layouts/ArticleLayout.astro";
-import Breadcrumbs from "../../components/marketing/Breadcrumbs.astro";
 import { articleSchema, breadcrumbSchema } from "../../lib/schema-org";
 import { buildSeo } from "../../lib/seo";
 import { formatDate } from "../../lib/utils";
@@ -42,7 +41,6 @@ const { Content } = await render(post);
 ---
 
 <ArticleLayout seo={seo} schema={schema}>
-  <Breadcrumbs items={[{ name: "Accueil", path: "/" }, { name: "Blog", path: "/blog/" }, { name: post.data.title, path }]} />
   <div class="eyebrow">{formatDate(post.data.publishedAt)}</div>
   <h1 style="max-width: 16ch; font-size: clamp(2.25rem, 6vw, 4.5rem); letter-spacing: -0.06em; line-height: 1;">{post.data.heading ?? post.data.title}</h1>
   <p class="lead-copy">{post.data.description}</p>
